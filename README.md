@@ -1,5 +1,5 @@
 ## Install
-`pip install yt-dlp`
+`pip install yt-dlp requests`
 
 ## Run
 python main.py
