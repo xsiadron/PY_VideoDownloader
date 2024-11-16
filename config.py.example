@@ -1,4 +1,6 @@
 MAIN_FOLDER = "data"
+VIDEOS_FOLDER_NAME = "videos"
+THUMBNAILS_FOLDER_NAME = "thumbnails"
 COOKIES_FILE = "cookies.txt"
 MAX_RETRIES = 5
 VIDEO_FORMAT = 'bestvideo+bestaudio/best'

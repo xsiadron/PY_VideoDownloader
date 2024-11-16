@@ -4,17 +4,16 @@ import os
 import requests
 from datetime import datetime
 from utils import clean_description, create_folder, format_timestamp
-from config import MAIN_FOLDER, COOKIES_FILE, MAX_RETRIES, VIDEO_FORMAT, THUMBNAIL_FORMAT
+from config import MAIN_FOLDER, COOKIES_FILE, MAX_RETRIES, VIDEO_FORMAT, THUMBNAIL_FORMAT, VIDEOS_FOLDER_NAME, THUMBNAILS_FOLDER_NAME
 
 
 def download_tiktok_videos(username):
     create_folder(MAIN_FOLDER)
 
     folder_name = os.path.join(MAIN_FOLDER, username)
-    videos_folder = os.path.join(folder_name, "videos")
-    thumbnails_folder = os.path.join(folder_name, "thumbnails")
+    videos_folder = os.path.join(folder_name, VIDEOS_FOLDER_NAME)
+    thumbnails_folder = os.path.join(folder_name, THUMBNAILS_FOLDER_NAME)
 
-    create_folder(folder_name)
     create_folder(videos_folder)
     create_folder(thumbnails_folder)
 
@@ -62,8 +61,9 @@ def download_tiktok_videos(username):
                         thumbnail_path = os.path.join(
                             thumbnails_folder, thumbnail_file_name)
                         download_thumbnail(thumbnail_url, thumbnail_path)
+                        thumbnail_relative_path = f"{THUMBNAILS_FOLDER_NAME}/{thumbnail_file_name}"
                     else:
-                        thumbnail_path = None
+                        thumbnail_relative_path = 'no_thumbnail'
 
                 except Exception as e:
                     print(f"Failed to download video {video_id}: {e}")
@@ -78,7 +78,7 @@ def download_tiktok_videos(username):
                     'view_count': video.get('view_count', 'no_data'),
                     'like_count': video.get('like_count', 'no_data'),
                     'comment_count': video.get('comment_count', 'no_data'),
-                    'thumbnail': thumbnail_file_name if thumbnail_path else 'no_thumbnail'
+                    'thumbnail': thumbnail_relative_path
                 }
 
             json_file_path = os.path.join(folder_name, f'{username}.json')
