@@ -7,20 +7,21 @@ from utils import clean_description, create_folder, format_timestamp
 from config import MAIN_FOLDER, COOKIES_FILE, MAX_RETRIES, VIDEO_FORMAT, THUMBNAIL_FORMAT, VIDEOS_FOLDER_NAME, THUMBNAILS_FOLDER_NAME
 
 
-def download_tiktok_videos(username):
+def download_content(url, platform, download_profile=True):
     create_folder(MAIN_FOLDER)
 
-    folder_name = os.path.join(MAIN_FOLDER, username)
-    videos_folder = os.path.join(folder_name, VIDEOS_FOLDER_NAME)
-    thumbnails_folder = os.path.join(folder_name, THUMBNAILS_FOLDER_NAME)
+    platform_folder = os.path.join(MAIN_FOLDER, platform)
+    create_folder(platform_folder)
+
+    videos_folder = os.path.join(platform_folder, VIDEOS_FOLDER_NAME)
+    thumbnails_folder = os.path.join(platform_folder, THUMBNAILS_FOLDER_NAME)
 
     create_folder(videos_folder)
     create_folder(thumbnails_folder)
 
-    url = f"https://www.tiktok.com/@{username}"
     ydl_opts = {
         'outtmpl': f'{videos_folder}/%(id)s.%(ext)s',
-        'noplaylist': True,
+        'noplaylist': not download_profile,
         'merge_output_format': 'mp4',
         'cookies': COOKIES_FILE,
         'format': VIDEO_FORMAT,
@@ -31,7 +32,8 @@ def download_tiktok_videos(username):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             result = ydl.extract_info(url, download=False)
-            videos = result.get('entries', [])
+            videos = result.get(
+                'entries', [result]) if download_profile else [result]
 
             if not videos:
                 return
@@ -41,6 +43,9 @@ def download_tiktok_videos(username):
             video_data = {}
 
             for index, video in enumerate(videos):
+                if not video:
+                    continue
+
                 video_id = video['id']
                 description = clean_description(
                     video.get('description', 'no_description'))
@@ -54,7 +59,7 @@ def download_tiktok_videos(username):
                 try:
                     ydl_opts['outtmpl'] = f'{videos_folder}/{file_name}'
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl_download:
-                        ydl_download.download([full_url])
+                        ydl_download.download([video['webpage_url']])
 
                     if 'thumbnail' in video:
                         thumbnail_url = video['thumbnail']
@@ -72,7 +77,7 @@ def download_tiktok_videos(username):
                 video_data[index] = {
                     'date': upload_timestamp.strftime('%Y-%m-%d %H:%M'),
                     'description': video.get('description', 'no_description'),
-                    'url': full_url,
+                    'url': video['webpage_url'],
                     'title': video.get('title', 'no_title'),
                     'id': video['id'],
                     'view_count': video.get('view_count', 'no_data'),
@@ -81,12 +86,12 @@ def download_tiktok_videos(username):
                     'thumbnail': thumbnail_relative_path
                 }
 
-            json_file_path = os.path.join(folder_name, f'{username}.json')
+            json_file_path = os.path.join(platform_folder, f'{platform}.json')
             with open(json_file_path, 'w', encoding='utf-8') as json_file:
                 json.dump(video_data, json_file, ensure_ascii=False, indent=4)
 
             print(
-                f"Downloaded {len(videos)} videos and saved data to {json_file_path}")
+                f"Downloaded {len(videos)} items and saved data to {json_file_path}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
